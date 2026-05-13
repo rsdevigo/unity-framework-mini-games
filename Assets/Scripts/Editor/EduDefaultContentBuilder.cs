@@ -25,6 +25,7 @@ namespace UnityFramework.MiniGames.EditorTools
         [MenuItem("Edu Framework/Generate Default Content (SOs + Scenes + Hub Wire)")]
         public static void GenerateAll()
         {
+            EduUiToolkitFoundationEditor.EnsureDefaultPanelSettingsAsset();
             Directory.CreateDirectory(Gen);
             Directory.CreateDirectory(MiniScenes);
 
@@ -296,6 +297,9 @@ namespace UnityFramework.MiniGames.EditorTools
             }
         }
 
+        /// <summary>
+        /// Creates an additive mini-game scene: one root with <see cref="MiniGameBase"/>; UI is UI Toolkit (<see cref="UnityEngine.UIElements.UIDocument"/>) created by shells / games at runtime.
+        /// </summary>
         static void BuildMiniGameScene(string sceneName, System.Type miniGameType, MiniGameConfigSO cfg)
         {
             var sc = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

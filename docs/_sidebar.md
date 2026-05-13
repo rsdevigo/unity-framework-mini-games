@@ -2,3 +2,5 @@
   - [Manual_Usuario_PTBR](/Manual_Usuario_PTBR.md)
   - [Tutorial_Framework_PTBR](/Tutorial_Framework_PTBR.md)
   - [User_Manual_EN](/User_Manual_EN.md)
+  - [UI Toolkit — Designers (PT)](/UI_Toolkit_Designers_PTBR.md)
+  - [Prompt — Plano UI Toolkit / UX (PT)](/Prompt_Plano_UI_Toolkit_UX_PTBR.md)

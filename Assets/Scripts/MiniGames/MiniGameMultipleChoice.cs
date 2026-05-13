@@ -23,6 +23,8 @@ namespace UnityFramework.MiniGames.Gameplay
 
         protected override IEnumerator RunSessionRoutine()
         {
+            yield return null;
+
             var set = Config.ChallengeSet;
             if (set == null || set.Challenges == null || set.Challenges.Count == 0)
                 yield break;

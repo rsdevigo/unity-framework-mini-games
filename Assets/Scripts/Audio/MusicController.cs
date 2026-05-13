@@ -9,6 +9,7 @@ namespace UnityFramework.MiniGames.Audio
     public sealed class MusicController : MonoBehaviour
     {
         [SerializeField] [Range(0f, 1f)] float _musicVolume = 0.35f;
+        
         [SerializeField] [Range(0f, 1f)] float _duckedVolume = 0.12f;
         [SerializeField] float _duckFadeSeconds = 0.25f;
 

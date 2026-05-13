@@ -3,33 +3,41 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using UnityFramework.MiniGames.Data;
 using UnityFramework.MiniGames.UI;
 
 namespace UnityFramework.MiniGames.Gameplay
 {
     /// <summary>
-    /// Click syllable tiles in the correct order (mouse-first, low text).
+    /// Click syllable tiles in the correct order (UI Toolkit).
     /// </summary>
     public sealed class MiniGameSyllableBuilder : MiniGameBase
     {
         int? _pendingSyllableIndex;
+        UIDocument _doc;
+
+        UIDocument EnsureDoc()
+        {
+            if (_doc == null)
+                _doc = gameObject.GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
+            _doc.sortingOrder = 100;
+            EduUiToolkitDefaults.ApplyTo(_doc);
+            if (_doc.visualTreeAsset == null)
+                _doc.visualTreeAsset = EduUiToolkitDefaults.LoadVisualTree("SyllableShell");
+            return _doc;
+        }
 
         protected override IEnumerator RunSessionRoutine()
         {
             GameplayUiUtility.EnsureEventSystem();
-            var canvas = GameplayUiUtility.CreateOverlayCanvas("SyllableGame", transform);
-            var root = new GameObject("Root", typeof(RectTransform), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
-            root.SetParent(canvas.transform, false);
-            var v = root.GetComponent<VerticalLayoutGroup>();
-            v.spacing = 28f;
-            v.padding = new RectOffset(60, 60, 140, 60);
-            v.childAlignment = TextAnchor.MiddleCenter;
-            root.anchorMin = Vector2.zero;
-            root.anchorMax = Vector2.one;
-            root.offsetMin = Vector2.zero;
-            root.offsetMax = Vector2.zero;
+            EnsureDoc();
+            yield return null;
+
+            var root = _doc.rootVisualElement;
+            var syllablesRow = root.Q("syllables-row");
+            if (syllablesRow == null)
+                yield break;
 
             var set = Config.ChallengeSet;
             if (set?.Challenges == null || set.Challenges.Count == 0)
@@ -44,17 +52,12 @@ namespace UnityFramework.MiniGames.Gameplay
                 if (ch is not SyllableChallengeSO s || s.SyllablePartsInOrder == null || s.SyllablePartsInOrder.Length == 0)
                     continue;
 
-                for (var i = root.childCount - 1; i >= 0; i--)
-                    Destroy(root.GetChild(i).gameObject);
+                syllablesRow.Clear();
 
                 if (s.PromptNarration != null)
                     Context.Audio.EnqueueNarration(s.PromptNarration);
                 if (s.TargetWordAudio != null)
                     Context.Audio.EnqueueNarration(s.TargetWordAudio);
-
-                var row = new GameObject("Syllables", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
-                row.SetParent(root, false);
-                row.GetComponent<HorizontalLayoutGroup>().spacing = 14f;
 
                 var order = Enumerable.Range(0, s.SyllablePartsInOrder.Length).OrderBy(_ => Random.value).ToArray();
                 foreach (var idx in order)
@@ -63,9 +66,26 @@ namespace UnityFramework.MiniGames.Gameplay
                     var sprite = s.SyllableSprites != null && idx < s.SyllableSprites.Length
                         ? s.SyllableSprites[idx]
                         : null;
-                    var b = GameplayUiUtility.CreateChoiceButton(row, part, sprite);
                     var captured = idx;
-                    b.onClick.AddListener(() => _pendingSyllableIndex = captured);
+                    var btn = new Button(() => _pendingSyllableIndex = captured)
+                    {
+                        text = part
+                    };
+                    btn.AddToClassList("edu-min-touch");
+                    btn.style.width = 220;
+                    btn.style.height = 220;
+                    btn.style.marginRight = 14;
+                    btn.style.marginBottom = 14;
+                    btn.style.backgroundColor = new Color(0.85f, 0.9f, 1f);
+                    btn.style.fontSize = 26;
+                    btn.style.color = Color.black;
+                    btn.style.borderTopLeftRadius = 12;
+                    btn.style.borderTopRightRadius = 12;
+                    btn.style.borderBottomLeftRadius = 12;
+                    btn.style.borderBottomRightRadius = 12;
+                    if (sprite != null)
+                        btn.style.backgroundImage = new StyleBackground(sprite);
+                    syllablesRow.Add(btn);
                 }
 
                 var next = 0;

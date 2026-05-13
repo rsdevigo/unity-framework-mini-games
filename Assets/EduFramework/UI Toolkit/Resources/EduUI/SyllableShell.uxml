@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="syllable-root" picking-mode="Position" class="edu-safe-area edu-feedback-root" style="flex-grow: 1; background-color: rgb(24, 28, 36); align-items: center; justify-content: center; flex-direction: column; padding: 40px;">
+        <ui:VisualElement name="syllables-row" picking-mode="Position" style="flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center;" />
+    </ui:VisualElement>
+</ui:UXML>

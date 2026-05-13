@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="poc-root" picking-mode="Position" class="edu-safe-area edu-feedback-root" style="flex-grow: 1; background-color: rgb(24, 28, 36); align-items: center; justify-content: center; flex-direction: column;">
+        <ui:Label name="poc-title" text="UITK foundation PoC" style="font-size: 28px; color: rgb(248, 248, 252); -unity-font-style: bold;" />
+        <ui:Button name="btn-back-mock" text="Voltar (mock)" class="edu-min-touch" style="margin-top: 40px; min-width: 200px; background-color: rgb(40, 46, 58); color: rgb(248, 248, 252); border-radius: 12px;" />
+    </ui:VisualElement>
+</ui:UXML>

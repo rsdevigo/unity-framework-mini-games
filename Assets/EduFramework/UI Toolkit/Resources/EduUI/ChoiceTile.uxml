@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:Button name="choice-button" picking-mode="Position" class="choice-tile edu-min-touch" style="width: 220px; height: 220px; margin: 16px; background-color: rgb(217, 230, 255); border-radius: 12px; border-width: 0;">
+        <ui:Label name="choice-label" text="?" picking-mode="Ignore" style="font-size: 26px; color: black; -unity-text-align: middle-center; flex-grow: 1; white-space: normal;" />
+    </ui:Button>
+</ui:UXML>

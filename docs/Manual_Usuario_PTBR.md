@@ -186,18 +186,18 @@ Resumo amigável do que cada pasta contém:
 | `Core/Events/` | Canais de evento em ScriptableObject (`AnswerEvaluatedEventChannelSO`, `MiniGameSessionEventChannelSO`, `VoidEventChannelSO`) — barramentos opcionais para desacoplar Hub/UI/analytics. |
 | `Audio/` | `AudioDirector` (fachada), `SfxPlayer`, `NarrationController` (fila com prioridade), `MusicController` (ducking), `AudioCueSO`, enum `AudioPriority`. |
 | `Input/` | `InputRouter` — encapsula o Unity Input System e expõe propriedades semânticas como `PrimaryClickPressedThisFrame`. |
-| `UI/` | UI compartilhada: `MultipleChoiceShellView`, `DragDropSlotsShellView`, `DraggableUI`, `DropBinView`, `FeedbackKit`, `GameplayUiUtility`. |
+| `UI/` | UI Toolkit: `MultipleChoiceShellView`, `DragDropSlotsShellView`, `FeedbackKit`, `EduUiToolkitDefaults`, `GameplayUiUtility` (EventSystem), `UiToolkitFoundationPoc` (PoC). |
 | `Hub/` | `HubWorldController` (cria nós, carrega/descarrega cenas `MG_*`) e `MiniGameSessionHub` (o delegate `RequestExitToHub`). |
 | `MiniGames/` | `MiniGameBase` (ciclo de vida), `MiniGameContext`, `EvaluationResult`, `ChallengePicker`, e uma classe concreta por jogo (`MiniGameMultipleChoice`, `MiniGameCounting`, `MiniGameMemory`, `MiniGameStoryGaps`, `MiniGameClassification`, `MiniGameSyllableBuilder`). |
 | `Progress/` | `ProgressService` (salva localmente em JSON sob `Application.persistentDataPath`) e `ProgressExportUtility` (CSV para o professor). |
 | `Localization/` | `LocalizationService` com tabela de fallback pt-BR no código e suporte a assets `LocalizedTableSO`. |
 | `Data/` | Todos os **tipos** de ScriptableObject (Challenge, ChallengeSet, MiniGameConfig, MiniGameCatalog, HubConfiguration, UnlockRule, LocalizedTable, BnccTag, StoryBook). |
-| `Editor/` | Ferramentas só de editor: `EduDefaultContentBuilder` (o menu *Generate Default Content*) e `TeacherExportWindow`. |
+| `Editor/` | Ferramentas só de editor: `EduDefaultContentBuilder` (menu *Generate Default Content*), `EduUiToolkitFoundationEditor` (PanelSettings + cena PoC UITK), `TeacherExportWindow`. |
 
 ### 4.2 Prefabs (`Assets/EduFramework/Prefabs/`)
 
-- **`UI/MultipleChoiceShellView.prefab`** — Prefab vazio com o componente `MultipleChoiceShellView`, usado como pai dos tiles de escolha montados em runtime.
-- **`UI/DragDropSlotsShellView.prefab`** — Mesma ideia para jogos de arrastar e soltar.
+- **`UI/MultipleChoiceShellView.prefab`** — Prefab com `MultipleChoiceShellView` (UI Toolkit: `UIDocument` + UXML em `Resources/EduUI/`).
+- **`UI/DragDropSlotsShellView.prefab`** — Idem para classificação / arrastar e soltar (bins + tokens UITK).
 - **`MiniGames/MiniGame_Template_MultipleChoice.prefab`** — Raiz pronta para jogos de múltipla escolha. Carrega `MultipleChoiceShellView` **e** `MiniGameMultipleChoice` no mesmo objeto raiz — arraste para uma cena `MG_*` nova, atribua sua config, pronto.
 
 ### 4.3 ScriptableObjects (`Assets/EduFramework/ScriptableObjects/Generated/`)
@@ -221,12 +221,16 @@ Você pode continuar autorando dentro desta pasta ou criar uma pasta irmã para 
 
 Os assets de áudio (clips) podem ficar em qualquer pasta sob `Assets/` (recomendamos `Assets/EduFramework/Audio/Voice/`, `Sfx/`, `Music/`). Os clips são referenciados indiretamente via assets **`AudioCueSO`** — nunca aponte um `AudioClip` puro em um GameObject; sempre embrulhe em uma cue para manter prioridade/cooldown/volume consistentes.
 
-### 4.6 UI
+### 4.6 UI (UI Toolkit)
 
-**Não existe um canvas de UI pré-fabricado.** A UI deste framework é construída **em tempo de execução** pelos componentes shell (`MultipleChoiceShellView`, `DragDropSlotsShellView`, etc.) e pelo helper `GameplayUiUtility.CreateOverlayCanvas`. Para customizar a UI, você pode:
+A camada visual do Hub e dos mini-jogos usa **UI Toolkit** (`UIDocument`, UXML, USS). Os layouts versionados ficam em **`Assets/EduFramework/UI Toolkit/Resources/EduUI/`** (UXML/USS) e o painel partilhado em **`EduDefaultPanelSettings.asset`** (criado pelo menu **Edu Framework → UI Toolkit → Ensure Default PanelSettings** ou automaticamente ao correr **Generate Default Content**).
 
-- substituir o canvas construído em runtime por um prefab próprio e atribuí-lo ao campo `_choicesParent` / `_binsParent` da shell, ou
-- estender a shell e sobrescrever o layout (ver [§ 6](#6-customização-da-ui-muito-importante)).
+- **PanelSettings** — escala de referência **1920×1080** (equivalente ao antigo CanvasScaler), `Screen Space Overlay`.
+- **Presenters em C#** — classes como `HubWorldController`, `MultipleChoiceShellView` e `DragDropSlotsShellView` instanciam/clonam UXML e mantêm nomes estáveis (`map-root`, `choices-row`, `edu-drop-bin`, …) para `Query`.
+- **EventSystem** — `GameplayUiUtility.EnsureEventSystem()` continua a garantir **Input System** + picking compatível enquanto o projeto evolui.
+- **PoC** — cena opcional **`Assets/Scenes/UITK_FoundationTest.unity`** (menu **Edu Framework → UI Toolkit → Create Foundation Test Scene**): título + botão mock só para validar o pipeline UITK.
+
+Para alterar o aspeto: edite UXML/USS no **UI Builder** e faça commit; evite renomear `name=` usados pelos scripts (ver [guia para designers](UI_Toolkit_Designers_PTBR.md)). Detalhes em [§ 6](#6-customização-da-ui-muito-importante).
 
 ---
 
@@ -365,105 +369,64 @@ Você quase nunca precisa abrir a cena para mudar comportamento — a maior part
 
 ## 6. Customização da UI (muito importante)
 
-Hoje o framework **constrói a maior parte da UI em tempo de execução** via pequenos helpers em C#. Isso deixa o demo leve, mas significa que customizar UI é um processo de dois passos: **(a)** decidir se você quer sobrescrever partes pelo Inspector ou substituindo prefabs; **(b)** preservar defaults acessíveis.
+A personalização visual passa a ser **principalmente UXML + USS + PanelSettings**, com C# fino só para ligar dados (`MiniGameConfigSO`, localização) e eventos. Fluxo típico de designer: abrir o ficheiro UXML no **UI Builder** → ajustar layout/tokens → commit no Git → Play para validar em PC e, quando possível, num dispositivo móvel.
 
 ### 6.1 Onde a UI mora
 
 | Onde | O que faz | Como customizar |
 |-------|--------------|------------------|
-| `GameplayUiUtility.CreateOverlayCanvas(name, parent)` | Cria um Canvas Screen-Space-Overlay com referência 1920×1080 e `GraphicRaycaster`. | Substitua por um prefab de canvas próprio e parente a shell nele, evitando a auto-criação. |
-| `GameplayUiUtility.CreateChoiceButton(parent, label, image)` | Cria um botão de 220×220 com imagem + rótulo, usado pelos jogos de múltipla escolha e contagem. | Estenda a shell e forneça sua própria fábrica de botões, **ou** substitua em runtime via `OnInitialized()` em uma subclasse. |
-| `MultipleChoiceShellView` | Distribui os botões de escolha horizontalmente em `_choicesParent` (40 px de padding lateral, 200 px superior/inferior, 24 px de spacing). | Atribua um `_choicesParent` já estilizado no Inspector para pular a versão auto-gerada. |
-| `DragDropSlotsShellView` | Dois HorizontalLayoutGroups: linha de bins em cima, linha de tokens embaixo. | Idem — atribua seus próprios `_binsParent` e `_tokensParent`. |
-| `HubWorldController` | Constrói os nós do hub (Image 180×180 verde + Button + Text). | Substitua por uma versão dirigida por prefab (ver § 11.1). |
-| `FeedbackKit` | Toca o pulso de escala não-punitivo no acerto/erro. | Campos no Inspector: `_pulseSeconds`, `_correctScale`, `_wrongScale`. |
+| `Assets/EduFramework/UI Toolkit/Resources/EduUI/*.uxml` | Ecrãs e blocos (Hub, múltipla escolha, contagem, memória, sílabas, drag-and-drop, PoC). | UI Builder; manter `name=` estáveis listados no guia de designers. |
+| `Assets/EduFramework/UI Toolkit/Resources/EduUI/Theme.uss` | Tokens (`--edu-spacing-*`, cores, `.edu-min-touch`, `.edu-drop-bin`, …). | Ajustar variáveis USS; referenciar em UXML com `<Style src="Theme.uss" />`. |
+| `EduDefaultPanelSettings.asset` | `PanelSettings` partilhado (1920×1080, overlay). | Menu **Edu Framework → UI Toolkit → Ensure Default PanelSettings**; duplicar asset se precisar de outro `sortingOrder`/escala. |
+| `MultipleChoiceShellView` | `UIDocument` + clone de `ChoiceTile.uxml` na `choices-row`. | Campos opcionais: `_shellUxml`, `_choiceTileUxml`, `_panelSettingsOverride`. |
+| `DragDropSlotsShellView` | `DragDropShell.uxml`; bins com classe `edu-drop-bin` e `userData` = id da categoria. | USS para bins/tokens; manipulador em `EduClassificationDragManipulator`. |
+| `HubWorldController` | `HubMap.uxml` + clone de `HubNodeTemplate.uxml` por nó. | Posição vem de `HubMapNode.AnchoredUiPosition` (translate no nó). |
+| `FeedbackKit` | Pulso de escala no `VisualElement` raiz com classe `edu-feedback-root`. | Inspector: `_pulseSeconds`, `_correctScale`, `_wrongScale`. |
+| `GameplayUiUtility` | Garante `EventSystem` + `InputSystemUIInputModule`. | Mantém input coerente com UI Toolkit. |
 
-### 6.2 Mudando o estilo visual (cores, fontes, sprites, estilo dos botões)
+### 6.2 Estilo visual (cores, fontes, sprites)
 
-#### Cores
+#### Cores e tipografia
 
-A UI construída em runtime usa estas cores fixas no código:
+Prefira alterar **`Theme.uss`** e classes nos UXML em vez de cores em C#. Onde ainda há estilo em código (ex.: cartas de memória criadas em C#), alinhe com os mesmos tokens para consistência.
 
-| Elemento | Cor | Origem |
-|---------|-------|--------|
-| Nó do hub (desbloqueado) | RGB `(0.35, 0.75, 0.45)` — verde | `HubWorldController.BuildMap()` |
-| Nó do hub (bloqueado) | RGB `(0.55, 0.55, 0.55)` — cinza | `HubWorldController.BuildMap()` |
-| Botão de escolha (sem sprite) | RGB `(0.85, 0.9, 1)` — azul pálido | `GameplayUiUtility.CreateChoiceButton` |
-| Bin do drop | RGB `(0.95, 0.95, 1)` — quase branco | `DragDropSlotsShellView.BuildBins` |
-| Carta da memória | RGB `(0.2, 0.45, 0.85)` — azul | `MiniGameMemory.MakeCard` |
+| Elemento | Notas |
+|---------|--------|
+| Nó do hub | Cores aplicadas em `HubWorldController.BuildMap()` no `VisualElement` do nó; pode migrar-se para USS por classe. |
+| Tiles de escolha | `ChoiceTile.uxml` + USS; sprites de `MultipleChoiceChallengeSO` aplicados como `background-image` no botão. |
+| Bins / tokens | Classes `.edu-drop-bin` e `.classification-token` em `Theme.uss`. |
 
-Para mudar **sem subclassar**, o caminho mais limpo é atribuir um **sprite** ao Image/Button relevante. As fábricas ignoram a cor de fallback quando há imagem.
+#### Fontes (UI Toolkit)
 
-Para mudar **via código** (controle do designer), copie o helper relevante para sua própria classe utilitária (ex.: `BrandedUiUtility`) e roteie sua shell subclassada por ela. Ver § 11 para o padrão.
-
-#### Fontes
-
-O texto em runtime usa a fonte built-in **`LegacyRuntime.ttf`** (ver `GameplayUiUtility.BuiltinRuntimeFont`). Para usar uma fonte da marca:
-
-1. Coloque seu `.ttf` ou `.otf` em `Assets/EduFramework/UI/Fonts/`.
-2. Em `GameplayUiUtility.cs`, troque o getter `BuiltinRuntimeFont` para carregar sua fonte:
-
-   ```csharp
-   public static Font BuiltinRuntimeFont =>
-       _builtinRuntimeFont ??= Resources.Load<Font>("Fonts/ChildFriendly");
-   ```
-
-   (Coloque a fonte em `Assets/Resources/Fonts/` para o `Resources.Load` encontrar.)
-3. Recompile — todo rótulo (hub, botões de escolha, prompts, cartas da memória) passa a usá-la.
-
-> 💡 **Dica:** se preferir migrar para **TextMeshPro**, substitua `Text` por `TMP_Text` em `GameplayUiUtility.CreateChoiceButton` e `HubWorldController.BuildMap`. Teste primeiro em `MG_Consonants`.
+1. Crie **Panel Text Settings** / fonte SDF conforme o guia Unity 6 para UITK.
+2. Atribua no asset **`EduDefaultPanelSettings`** (campo **Text Settings** / tema, conforme a versão do Editor).
+3. Evite texto “fixo” crítico só no UXML se precisar de localização — prefira preencher `Label.text` a partir de `AppContext.Localization` nos presenters.
 
 #### Sprites
 
-- **Ícone do nó no hub**: estenda `HubWorldController` para ler um sprite de cada `HubMapNode` e atribuí-lo ao `Image` auto-criado. O caminho mais limpo é adicionar um campo `_icon` em `HubMapNode` (`HubConfigurationSO.cs`) e aplicar em `BuildMap()`.
-- **Sprite do tile de escolha**: basta preencher o array **Option Images** do `MultipleChoiceChallengeSO` — `CreateChoiceButton` consome o sprite e limpa a cor de fallback automaticamente.
-- **Cartas de memória**: hoje exibem um texto `?`. Para flip com sprites, adicione campos de sprite face A/B em `MemoryPairChallengeSO` e edite `MiniGameMemory.Flip()` para trocar `Image.sprite` em vez de mudar `Text.text`.
-
-#### Estilo dos botões
-
-O jeito mais simples de reestilizar todo `CreateChoiceButton`:
-
-1. Abra `Assets/Scripts/UI/GameplayUiUtility.cs`.
-2. Em `CreateChoiceButton`, mude `rt.sizeDelta` (default `220, 220`), adicione um contorno (`go.AddComponent<Outline>()`) ou ajuste `btn.transition = Selectable.Transition.SpriteSwap` e atribua sprites da marca.
+- **Múltipla escolha**: preencha **Option Images** no `MultipleChoiceChallengeSO` — a shell aplica no estilo do botão.
+- **Memória / contagem / sílabas**: hoje parte do layout é criada em C# (`Button` UITK); para branding total, extraia UXML de “card” ou “número” como feito em `ChoiceTile.uxml`.
 
 ### 6.3 Adaptando para crianças (a seção mais importante)
 
-Este framework é voltado a **crianças de 4 a 6 anos**, então:
+- **Alvos de toque**: a classe USS `.edu-min-touch` define mínimo ~44 pt; mantenha botões grandes (220 px nos tiles de escolha) em UXML/USS.
+- **Áudio primeiro**: preencha **Prompt Narration** nos desafios; texto na UI é apoio.
+- **Feedback não punitivo**: `FeedbackKit` usa escala suave; mantenha `_wrongScale` perto de 1,0.
+- **Ritmo**: pausas `WaitForSecondsRealtime` nos mini-jogos podem ser aumentadas para turmas mais novas.
 
-- **Alvos de toque ≥ 64 px na tela**. Os botões de escolha default têm 220×220 — mantenha pelo menos 180×180 mesmo em layouts menores.
-- **Rótulos grandes e legíveis**: `resizeTextForBestFit` está ligado com `resizeTextMaxSize: 32` nos botões de escolha. Não baixe disso para menos de 18.
-- **Áudio primeiro, texto depois**: todo desafio deve preencher **Prompt Narration**. O rótulo na tela é tratado como alt-text acessível, não como pista principal.
-- **Feedback não-punitivo**: respostas erradas tocam uma cue *neutral retry* (tier `Correction`) e um **encolhimento** (escala 0,96) — nunca um "buzzer", nunca flash vermelho. Mantenha `FeedbackKit._wrongScale` próximo de 1,0.
-- **Ritmo calmo**: cada rodada espera 0,45 s após o feedback (`yield return new WaitForSecondsRealtime(0.45f)`). Aumente esse valor em `MiniGameMultipleChoice` / `MiniGameCounting` etc. para grupos mais novos.
-- **Sem pressão de tempo**: rodadas são limitadas por `DifficultyProfileSO.Rounds`, nunca por relógio.
+### 6.4 Novos elementos e ecrãs
 
-### 6.4 Criando novos elementos de UI
+- **Novo estilo de tile**: duplique `ChoiceTile.uxml`, ajuste USS, e atribua o asset ao campo **`_choiceTileUxml`** em `MultipleChoiceShellView` (prefab ou cena).
+- **Novo ecrã UITK**: adicione UXML em `Resources/EduUI/`, referencie no `UIDocument` de um presenter ou carregue com `EduUiToolkitDefaults.LoadVisualTree("NomeSemExtensao")`.
+- **Painel extra (pausa)**: novo `UIDocument` na cena com `sortingOrder` maior que o do jogo; USS para overlay sem bloquear área segura (`edu-safe-area`).
 
-#### Um novo estilo de botão
+### 6.5 Boas práticas
 
-Crie um **prefab** chamado, por exemplo, `Button_Choice_Branded.prefab` em `Assets/EduFramework/Prefabs/UI/` com sua estilização. Depois crie uma subclasse de `MultipleChoiceShellView` que instancia esse prefab em vez de chamar `GameplayUiUtility.CreateChoiceButton`. Troque o script no prefab template pela sua subclasse.
-
-#### Um novo painel (ex.: menu de pausa, configurações, cabeçalho do hub)
-
-1. Crie um prefab `Prefabs/UI/PauseOverlay.prefab` com a hierarquia do painel.
-2. Na cena **Hub**, coloque o prefab como irmão do `HubCanvas` (ou exponha um campo novo em `HubWorldController`).
-3. Acione-o por um botão no hub ou por um atalho de teclado em `AppSessionController`.
-
-#### Um novo popup de feedback
-
-Hoje, `FeedbackKit.Play(correct, target)` só faz o pulso de escala. Para adicionar um popup:
-
-1. Autoraqua um `Popup_Correct.prefab` e um `Popup_Wrong.prefab` em `Prefabs/UI/`.
-2. Adicione `[SerializeField] GameObject _correctPopupPrefab;` / `_wrongPopupPrefab;` no `FeedbackKit`.
-3. Em `FeedbackKit.Play()`, instancie o prefab apropriado sob o canvas e depois `Destroy` ao fim do pulso.
-
-### 6.5 Boas práticas de UI
-
-- **Redundância áudio + visual**: todo elemento interagível deve ter ícone E cue de narração. Nunca dependa só de cor (compatível com daltonismo).
-- **Acessibilidade**: mantenha o `EventSystem` (criado automaticamente em `GameplayUiUtility.EnsureEventSystem`) para teclado, mouse e toque funcionarem.
-- **Evite dependência de texto**: em SOs de desafio, trate `OptionIds` como alt-text. Se o público não lê, preencha `OptionImages` e mantenha `OptionIds` como IDs legíveis por máquina (`fruit_apple`, `fruit_pear`).
-- **Layouts que respiram**: use `HorizontalLayoutGroup` / `VerticalLayoutGroup` com pelo menos 24 px de spacing e 40 px de padding lateral (corresponde ao default do framework).
-- **Não brigue com o Canvas Scaler**: resolução de referência é `1920×1080`, match-mode `0.5`. Se precisa de outro aspect, mude em `GameplayUiUtility.CreateOverlayCanvas` uma vez só — nunca por prefab.
+- **Contrato código ↔ design**: não renomeie `name=` (`choices-row`, `map-root`, `memory-grid`, `btn-back-mock`, …) sem atualizar o C#.
+- **Git**: PRs de UX devem ser sobretudo UXML/USS + `PanelSettings`; dev revisa nomes e scripts tocados.
+- **Ordenação**: use `UIDocument.sortingOrder` (Hub ≈ 20, mini-jogos ≈ 100) alinhado ao antigo canvas.
+- **Input**: teste rato, toque e teclado após mudar `PanelSettings` ou estilos que afetem foco (`:focus` visível em USS).
+- **Área segura**: `Theme.uss` inclui `.edu-safe-area` com `env(safe-area-inset-*)`; ajuste se o alvo de build exigir mais padding.
 
 ---
 
@@ -646,7 +609,7 @@ No Windows o caminho normalmente é
 
 | Cenário | Resultado esperado |
 |---------|-----------------|
-| Clicar em qualquer nó do hub | Canvas do hub se esconde, cena aditiva carrega, mini-jogo começa depois que os serviços do Bootstrap inicializam. |
+| Clicar em qualquer nó do hub | O painel do Hub (`UIDocument`) oculta-se, a cena aditiva carrega e o mini-jogo arranca após o Bootstrap inicializar os serviços. |
 | Clicar na resposta errada | `FeedbackKit` encolhe, cue de retry neutro de `MiniGameConfigSO._neutralRetryCue` toca (se atribuída). |
 | Clicar na resposta certa | `FeedbackKit` aumenta, cue de sucesso toca (se atribuída). |
 | Completar N rodadas | Mini-jogo emite evento `Completed` em `MiniGameSessionEventChannelSO`, progresso incrementa, controle volta ao hub. |
@@ -689,10 +652,13 @@ Em ordem:
 
 ### UI não atualiza / botões não aparecem
 
-- `MultipleChoiceShellView.Bind()` está sendo chamada com `challenge == null`? Confira que o `ChallengeSetSO` tem ao menos um `MultipleChoiceChallengeSO` para esse jogo.
-- O desafio tem zero `OptionImages` **e** zero `OptionIds`. O `BuildSubsetIndices` ainda assume 2 por default, mas os botões ficam em branco.
-- O `EventSystem` se perdeu entre cenas. O framework cria um automaticamente em `GameplayUiUtility.EnsureEventSystem`, mas se você removeu essa chamada, adicione no `Awake` da sua shell custom.
-- Vários Canvases empilhados com o mesmo `sortingOrder`. O canvas do hub usa `20`; o auto-canvas do mini-jogo usa `100`. Se seu canvas custom esconder o mini-jogo, aumente o `sortingOrder`.
+- `MultipleChoiceShellView.Bind()` está a ser chamado com `challenge == null`? Confirme que o `ChallengeSetSO` tem pelo menos um `MultipleChoiceChallengeSO` para esse jogo.
+- O desafio tem zero `OptionImages` **e** zero `OptionIds`. O `BuildSubsetIndices` ainda assume 2 por defeito, mas os rótulos podem ficar vazios.
+- **`EduDefaultPanelSettings.asset` em falta**: corra **Edu Framework → UI Toolkit → Ensure Default PanelSettings** (ou **Generate Default Content**). Sem `PanelSettings`, o `UIDocument` pode não desenhar.
+- **UXML em falta ou fora de `Resources/EduUI/`**: os caminhos predefinidos usam `Resources.Load("EduUI/NomeDoFicheiro")` **sem** extensão.
+- **Uma frame de atraso**: após criar `UIDocument` ou trocar `visualTreeAsset`, o primeiro `Bind` pode precisar de `yield return null` na rotina do mini-jogo (já feito nos jogos de stock).
+- O `EventSystem` perdeu-se entre cenas. O projeto cria um em `GameplayUiUtility.EnsureEventSystem`; mantenha essa chamada nas shells.
+- Vários `UIDocument` com o mesmo `sortingOrder`. O hub usa `20`; mini-jogos usam `100`. Se um overlay extra tapar o jogo, aumente `sortingOrder` nesse documento.
 
 ### Canais de evento silenciosos
 
@@ -759,11 +725,11 @@ Para desenvolvedores.
 4. Registre no `BootstrapScope.Awake()` ao lado de `audio`/`input`/`progress`/`localization`.
 5. Encaminhe `AnswerEvaluatedEvent` para o sink se inscrevendo no seu `AnswerEvaluatedEventChannelSO` a partir de um `MonoBehaviour` separado na cena Bootstrap.
 
-### 11.3 Substituir o hub construído em runtime por um mapa baseado em prefab
+### 11.3 Substituir o mapa do hub por UXML próprio
 
-1. Construa seu layout de hub como prefab: um Canvas, um `RectTransform` raiz do mapa e um prefab de botão por nó.
-2. Remova o código de auto-build de `HubWorldController` (`EnsureCanvas`, `BuildMap`) e exponha um `[SerializeField] HubNodeView _nodePrefab;` que instancia **seu** prefab sob seu map root, passando os dados de `HubMapNode`.
-3. Mantenha o fluxo `LoadMiniGameRoutine` / `UnloadMiniGamesRoutine` — é o contrato com o resto do framework.
+1. Duplique `HubMap.uxml` / `HubNodeTemplate.uxml` para uma variante de marca (mantenha os mesmos `name=` que `HubWorldController` consulta: `map-root`, `hub-node`, `node-label`).
+2. Atribua os novos assets aos campos **`_hubMapUxml`** / **`_nodeTemplateUxml`** no `HubWorldController` da cena Hub (ou mantenha os defaults em `Resources/EduUI/` com o mesmo nome de ficheiro).
+3. Preserve o fluxo `LoadMiniGameRoutine` / `UnloadMiniGamesRoutine` (esconder/mostrar o `rootVisualElement` do hub).
 
 ### 11.4 Usar os canais de evento para amarrar sistemas
 

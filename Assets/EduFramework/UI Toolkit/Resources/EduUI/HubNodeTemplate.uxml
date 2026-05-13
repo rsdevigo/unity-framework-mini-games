@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="hub-node" picking-mode="Position" class="edu-min-touch" style="width: 180px; height: 180px; border-radius: 12px; background-color: rgb(90, 190, 115); align-items: center; justify-content: center; position: absolute; flex-shrink: 0;">
+        <ui:Label name="node-label" text="Game" style="font-size: 22px; color: white; -unity-text-align: middle-center; white-space: normal;" />
+    </ui:VisualElement>
+</ui:UXML>

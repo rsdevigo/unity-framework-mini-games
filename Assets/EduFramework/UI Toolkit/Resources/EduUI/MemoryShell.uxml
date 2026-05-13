@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="memory-root" picking-mode="Position" class="edu-safe-area edu-feedback-root" style="flex-grow: 1; background-color: rgb(24, 28, 36); align-items: center; justify-content: center;">
+        <ui:VisualElement name="memory-grid" picking-mode="Position" style="flex-direction: row; flex-wrap: wrap; max-width: 920px; justify-content: center; align-items: center;" />
+    </ui:VisualElement>
+</ui:UXML>

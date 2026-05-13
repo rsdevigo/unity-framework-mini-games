@@ -1,0 +1,35 @@
+/* Design tokens as concrete rules — Unity UXML inline styles do not resolve var() from imported USS. */
+
+.edu-safe-area {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.edu-min-touch {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.edu-feedback-root {
+    flex-grow: 1;
+}
+
+.edu-drop-bin {
+    width: 200px;
+    height: 200px;
+    background-color: rgb(242, 242, 255);
+    border-radius: 12px;
+    margin: 16px;
+    align-items: center;
+    justify-content: center;
+}
+
+.classification-token {
+    width: 140px;
+    height: 140px;
+    margin: 8px;
+    background-color: rgb(255, 235, 200);
+    border-radius: 12px;
+}

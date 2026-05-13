@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="dnd-root" picking-mode="Position" class="edu-safe-area edu-feedback-root" style="flex-grow: 1; background-color: rgb(24, 28, 36); flex-direction: column; padding: 40px; align-items: center;">
+        <ui:VisualElement name="bins-row" picking-mode="Position" style="flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; margin-bottom: 40px;" />
+        <ui:VisualElement name="tokens-row" picking-mode="Position" style="flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; min-height: 180px;" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,6 +1,7 @@
 //using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UIElements;
 using UnityFramework.MiniGames.Core;
 using UnityFramework.MiniGames.Core.Events;
 using UnityFramework.MiniGames.Data;
@@ -57,7 +58,6 @@ namespace UnityFramework.MiniGames.Gameplay
 
             _running = true;
             OnInitialized();
-            EnsureFeedbackKit();
             _lifecycleEvents?.Raise(gid, "Started");
             StartCoroutine(SessionWrapper());
         }
@@ -66,9 +66,9 @@ namespace UnityFramework.MiniGames.Gameplay
         {
             if (_feedback != null)
                 return;
-            var c = GetComponentInChildren<Canvas>(true);
-            if (c != null)
-                _feedback = c.gameObject.AddComponent<FeedbackKit>();
+            var uiDoc = GetComponentInChildren<UIDocument>(true);
+            if (uiDoc != null)
+                _feedback = uiDoc.gameObject.GetComponent<FeedbackKit>() ?? uiDoc.gameObject.AddComponent<FeedbackKit>();
         }
 
         IEnumerator SessionWrapper()
@@ -91,6 +91,7 @@ namespace UnityFramework.MiniGames.Gameplay
 
         protected void PlayFeedback(in EvaluationResult result)
         {
+            EnsureFeedbackKit();
             if (Feedback != null)
                 Feedback.Play(result.Correct, null);
             if (result.Correct && Config.SuccessCue != null)

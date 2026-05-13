@@ -286,9 +286,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnityFramework.MiniGames.Hub.HubWorldController
   _configuration: {fileID: 11400000, guid: 55b8127d05d374b47a3cbd481a2e9d1f, type: 2}
-  _mapRoot: {fileID: 0}
-  _hubCanvas: {fileID: 0}
-  _canvasSortOrder: 20
+  _uiDocument: {fileID: 0}
+  _panelSettingsOverride: {fileID: 0}
+  _hubMapUxml: {fileID: 0}
+  _nodeTemplateUxml: {fileID: 0}
+  _sortingOrder: 20
 --- !u!4 &1188608795
 Transform:
   m_ObjectHideFlags: 0

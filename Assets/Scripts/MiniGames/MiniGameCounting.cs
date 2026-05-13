@@ -1,31 +1,41 @@
 using System.Collections;
 using System.Diagnostics;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using UnityFramework.MiniGames.Data;
 using UnityFramework.MiniGames.UI;
 
 namespace UnityFramework.MiniGames.Gameplay
 {
     /// <summary>
-    /// Quantity discrimination using large number buttons (mouse-first).
+    /// Quantity discrimination using large number buttons (UI Toolkit).
     /// </summary>
     public sealed class MiniGameCounting : MiniGameBase
     {
+        UIDocument _doc;
+
+        UIDocument EnsureDoc()
+        {
+            if (_doc == null)
+                _doc = gameObject.GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
+            _doc.sortingOrder = 100;
+            EduUiToolkitDefaults.ApplyTo(_doc);
+            if (_doc.visualTreeAsset == null)
+                _doc.visualTreeAsset = EduUiToolkitDefaults.LoadVisualTree("CountingShell");
+            return _doc;
+        }
+
         protected override IEnumerator RunSessionRoutine()
         {
             GameplayUiUtility.EnsureEventSystem();
-            var canvas = GameplayUiUtility.CreateOverlayCanvas("CountingGame", transform);
-            var root = new GameObject("Root", typeof(RectTransform), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
-            root.SetParent(canvas.transform, false);
-            var v = root.GetComponent<VerticalLayoutGroup>();
-            v.spacing = 32f;
-            v.padding = new RectOffset(60, 60, 160, 60);
-            v.childAlignment = TextAnchor.MiddleCenter;
-            root.anchorMin = Vector2.zero;
-            root.anchorMax = Vector2.one;
-            root.offsetMin = Vector2.zero;
-            root.offsetMax = Vector2.zero;
+            EnsureDoc();
+            yield return null;
+
+            var root = _doc.rootVisualElement;
+            var numbersRow = root.Q("numbers-row");
+            var promptLabel = root.Q<Label>("prompt-label");
+            if (numbersRow == null || promptLabel == null)
+                yield break;
 
             var set = Config.ChallengeSet;
             if (set == null || set.Challenges == null || set.Challenges.Count == 0)
@@ -40,31 +50,34 @@ namespace UnityFramework.MiniGames.Gameplay
                 if (ch is not QuantityChallengeSO q)
                     continue;
 
-                foreach (Transform c in root)
-                    Destroy(c.gameObject);
+                numbersRow.Clear();
 
                 if (q.PromptNarration != null)
                     Context.Audio.EnqueueNarration(q.PromptNarration);
 
-                var prompt = new GameObject("Prompt", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
-                prompt.transform.SetParent(root, false);
-                prompt.font = GameplayUiUtility.BuiltinRuntimeFont;
-                prompt.fontSize = 42;
-                prompt.alignment = TextAnchor.MiddleCenter;
-                prompt.color = Color.white;
-                prompt.text = $"?  ({q.TargetCount})";
-
-                var row = new GameObject("Numbers", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
-                row.SetParent(root, false);
-                var h = row.GetComponent<HorizontalLayoutGroup>();
-                h.spacing = 18f;
+                promptLabel.text = $"?  ({q.TargetCount})";
 
                 int? picked = null;
                 for (var n = 1; n <= 6; n++)
                 {
-                    var b = GameplayUiUtility.CreateChoiceButton(row, n.ToString(), null);
                     var captured = n;
-                    b.onClick.AddListener(() => picked = captured);
+                    var btn = new Button(() => picked = captured)
+                    {
+                        text = n.ToString()
+                    };
+                    btn.AddToClassList("edu-min-touch");
+                    btn.style.width = 220;
+                    btn.style.height = 220;
+                    btn.style.marginRight = 18;
+                    btn.style.marginBottom = 18;
+                    btn.style.backgroundColor = new Color(0.85f, 0.9f, 1f);
+                    btn.style.fontSize = 32;
+                    btn.style.color = Color.black;
+                    btn.style.borderTopLeftRadius = 12;
+                    btn.style.borderTopRightRadius = 12;
+                    btn.style.borderBottomLeftRadius = 12;
+                    btn.style.borderBottomRightRadius = 12;
+                    numbersRow.Add(btn);
                 }
 
                 var sw = Stopwatch.StartNew();

@@ -1,109 +1,128 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 namespace UnityFramework.MiniGames.UI
 {
     /// <summary>
-    /// Builds a row of drop bins plus draggable tokens for classification / sorting games.
+    /// Drop bins + draggable classification tokens (UI Toolkit).
     /// </summary>
     public sealed class DragDropSlotsShellView : MonoBehaviour
     {
-        [SerializeField] RectTransform _binsParent;
-        [SerializeField] RectTransform _tokensParent;
+        [SerializeField] UIDocument _uiDocument;
+        [SerializeField] PanelSettings _panelSettingsOverride;
+        [SerializeField] VisualTreeAsset _shellUxml;
+        [SerializeField] int _sortingOrder = 100;
 
-        readonly List<DraggableUI> _tokens = new();
-        readonly List<DropBinView> _bins = new();
+        VisualElement _binsRow;
+        VisualElement _tokensRow;
+        Action<VisualElement, string> _dropHandler;
 
-        void Awake()
+        void Awake() => EnsureDocument();
+
+        void EnsureDocument()
         {
             GameplayUiUtility.EnsureEventSystem();
-            if (_binsParent == null || _tokensParent == null)
-            {
-                var canvas = GameplayUiUtility.CreateOverlayCanvas("DragDropShell", transform);
-                var root = new GameObject("Root", typeof(RectTransform), typeof(VerticalLayoutGroup)).GetComponent<RectTransform>();
-                root.SetParent(canvas.transform, false);
-                var v = root.GetComponent<VerticalLayoutGroup>();
-                v.padding = new RectOffset(40, 40, 120, 120);
-                v.spacing = 40f;
-                v.childAlignment = TextAnchor.UpperCenter;
-                v.childControlWidth = true;
-                v.childControlHeight = false;
-                root.anchorMin = Vector2.zero;
-                root.anchorMax = Vector2.one;
-                root.offsetMin = Vector2.zero;
-                root.offsetMax = Vector2.zero;
-
-                _binsParent = new GameObject("Bins", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
-                _binsParent.SetParent(root, false);
-                var bh = _binsParent.GetComponent<HorizontalLayoutGroup>();
-                bh.spacing = 24f;
-                bh.childAlignment = TextAnchor.MiddleCenter;
-
-                _tokensParent = new GameObject("Tokens", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
-                _tokensParent.SetParent(root, false);
-                var th = _tokensParent.GetComponent<HorizontalLayoutGroup>();
-                th.spacing = 16f;
-                th.childAlignment = TextAnchor.MiddleCenter;
-            }
+            if (_uiDocument == null)
+                _uiDocument = GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
+            _uiDocument.sortingOrder = _sortingOrder;
+            if (_panelSettingsOverride != null)
+                _uiDocument.panelSettings = _panelSettingsOverride;
+            else
+                EduUiToolkitDefaults.ApplyTo(_uiDocument);
+            if (_shellUxml == null)
+                _shellUxml = EduUiToolkitDefaults.LoadVisualTree("DragDropShell");
+            _uiDocument.visualTreeAsset = _shellUxml;
+            var root = _uiDocument.rootVisualElement;
+            _binsRow = root.Q("bins-row");
+            _tokensRow = root.Q("tokens-row");
         }
 
         public void ClearDynamic()
         {
-            foreach (var t in _tokens)
-            {
-                if (t != null)
-                    Destroy(t.gameObject);
-            }
-
-            _tokens.Clear();
-            foreach (var b in _bins)
-            {
-                if (b != null)
-                    Destroy(b.gameObject);
-            }
-
-            _bins.Clear();
+            EnsureDocument();
+            _binsRow?.Clear();
+            _tokensRow?.Clear();
         }
 
-        public void BuildBins(IReadOnlyList<string> categoryIds, Action<DraggableUI, DropBinView> onDrop)
+        public void BuildBins(IReadOnlyList<string> categoryIds, Action<VisualElement, string> onDrop)
         {
             ClearDynamic();
-            if (categoryIds == null)
+            _dropHandler = onDrop;
+            if (categoryIds == null || _binsRow == null)
                 return;
             foreach (var id in categoryIds)
             {
                 if (string.IsNullOrEmpty(id))
                     continue;
-                var go = new GameObject($"Bin_{id}", typeof(RectTransform), typeof(Image), typeof(DropBinView));
-                go.transform.SetParent(_binsParent, false);
-                var rt = (RectTransform)go.transform;
-                rt.sizeDelta = new Vector2(200, 200);
-                var img = go.GetComponent<Image>();
-                img.color = new Color(0.95f, 0.95f, 1f);
-                var bin = go.GetComponent<DropBinView>();
-                bin.SetCategoryId(id);
-                if (onDrop != null)
-                    bin.Received += d => onDrop(d, bin);
-                _bins.Add(bin);
+                var bin = new VisualElement();
+                bin.name = $"bin_{id}";
+                bin.AddToClassList("edu-drop-bin");
+                bin.userData = id;
+                var lbl = new Label(id);
+                lbl.style.unityTextAlign = TextAnchor.MiddleCenter;
+                lbl.style.color = new Color(0.15f, 0.15f, 0.2f);
+                lbl.style.whiteSpace = WhiteSpace.Normal;
+                bin.Add(lbl);
+                _binsRow.Add(bin);
             }
         }
 
-        public DraggableUI AddClassifiableToken(Sprite sprite, string categoryId)
+        public VisualElement AddClassifiableToken(Sprite sprite, string categoryId)
         {
-            var go = new GameObject($"Tok_{categoryId}", typeof(RectTransform), typeof(Image), typeof(DraggableUI), typeof(ClassificationItemTag));
-            go.transform.SetParent(_tokensParent, false);
-            var rt = (RectTransform)go.transform;
-            rt.sizeDelta = new Vector2(140, 140);
-            var img = go.GetComponent<Image>();
-            img.sprite = sprite;
-            img.color = sprite != null ? Color.white : new Color(1f, 0.92f, 0.8f);
-            var drag = go.GetComponent<DraggableUI>();
-            drag.SetTokenId(categoryId);
-            go.GetComponent<ClassificationItemTag>().CategoryId = categoryId;
-            _tokens.Add(drag);
-            return drag;
+            EnsureDocument();
+            var token = new VisualElement();
+            token.name = $"tok_{categoryId}";
+            token.AddToClassList("classification-token");
+            token.pickingMode = PickingMode.Position;
+            token.userData = new ClassificationTokenState { CategoryId = categoryId };
+
+            if (sprite != null)
+            {
+                var fill = new VisualElement();
+                fill.style.flexGrow = 1;
+                fill.style.backgroundImage = new StyleBackground(sprite);
+                fill.pickingMode = PickingMode.Ignore;
+                token.Add(fill);
+            }
+            else
+            {
+                var lbl = new Label(categoryId);
+                lbl.style.unityTextAlign = TextAnchor.MiddleCenter;
+                lbl.style.flexGrow = 1;
+                lbl.style.color = Color.black;
+                token.Add(lbl);
+            }
+
+            token.AddManipulator(new EduClassificationDragManipulator((t, cat) =>
+            {
+                if (!string.IsNullOrEmpty(cat))
+                    _dropHandler?.Invoke(t, cat);
+            }));
+
+            _tokensRow?.Add(token);
+            StartCoroutine(CaptureTokenHomeNextFrame(token));
+            return token;
+        }
+
+        public void ResetTokenHome(VisualElement token)
+        {
+            if (token?.userData is ClassificationTokenState st)
+                EduDragDropVisuals.ResetTokenHome(token, st.HomeX, st.HomeY);
+        }
+
+        static IEnumerator CaptureTokenHomeNextFrame(VisualElement token)
+        {
+            yield return null;
+            if (token == null)
+                yield break;
+            if (token.userData is not ClassificationTokenState st)
+                yield break;
+            var l = token.layout;
+            st.HomeX = l.x;
+            st.HomeY = l.y;
         }
     }
 }

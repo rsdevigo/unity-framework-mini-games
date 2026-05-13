@@ -1,45 +1,52 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using UnityFramework.MiniGames.Data;
 
 namespace UnityFramework.MiniGames.UI
 {
     /// <summary>
-    /// Inspector-friendly shell: wires large choice tiles from a <see cref="MultipleChoiceChallengeSO"/>.
+    /// Multiple-choice row built with UI Toolkit (UXML templates under Resources/EduUI/).
     /// </summary>
     public sealed class MultipleChoiceShellView : MonoBehaviour
     {
-        [SerializeField] RectTransform _choicesParent;
+        [SerializeField] UIDocument _uiDocument;
+        [SerializeField] PanelSettings _panelSettingsOverride;
+        [SerializeField] VisualTreeAsset _shellUxml;
+        [SerializeField] VisualTreeAsset _choiceTileUxml;
         [SerializeField] bool _rebuildEachBind = true;
+        [SerializeField] int _sortingOrder = 100;
 
-        readonly List<Button> _buttons = new();
+        VisualElement _choicesRow;
 
-        void Awake()
+        void Awake() => EnsureUiDocument();
+
+        void EnsureUiDocument()
         {
-            if (_choicesParent == null)
-            {
-                var canvas = GameplayUiUtility.CreateOverlayCanvas("MultipleChoiceShell", transform);
-                _choicesParent = new GameObject("ChoicesRow", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
-                _choicesParent.SetParent(canvas.transform, false);
-                var h = _choicesParent.GetComponent<HorizontalLayoutGroup>();
-                h.spacing = 24f;
-                h.childAlignment = TextAnchor.MiddleCenter;
-                h.childControlWidth = false;
-                h.childControlHeight = false;
-                h.padding = new RectOffset(40, 40, 200, 200);
-                var rt = _choicesParent;
-                rt.anchorMin = Vector2.zero;
-                rt.anchorMax = Vector2.one;
-                rt.offsetMin = Vector2.zero;
-                rt.offsetMax = Vector2.zero;
-            }
+            if (_uiDocument == null)
+                _uiDocument = GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
+            _uiDocument.sortingOrder = _sortingOrder;
+            if (_panelSettingsOverride != null)
+                _uiDocument.panelSettings = _panelSettingsOverride;
+            else
+                EduUiToolkitDefaults.ApplyTo(_uiDocument);
+            if (_shellUxml == null)
+                _shellUxml = EduUiToolkitDefaults.LoadVisualTree("MultipleChoiceShell");
+            if (_choiceTileUxml == null)
+                _choiceTileUxml = EduUiToolkitDefaults.LoadVisualTree("ChoiceTile");
+            _uiDocument.visualTreeAsset = _shellUxml;
+            _choicesRow = _uiDocument.rootVisualElement.Q("choices-row");
         }
 
         public void Bind(MultipleChoiceChallengeSO challenge, int maxChoices, Action<int> onChosen)
         {
             if (challenge == null || onChosen == null)
+                return;
+            EnsureUiDocument();
+            if (_choicesRow == null)
+                _choicesRow = _uiDocument.rootVisualElement.Q("choices-row");
+            if (_choicesRow == null)
                 return;
             if (_rebuildEachBind)
                 ClearChildren();
@@ -61,10 +68,17 @@ namespace UnityFramework.MiniGames.UI
                 var id = challenge.OptionIds != null && originalIndex < challenge.OptionIds.Count
                     ? challenge.OptionIds[originalIndex]
                     : $"opt{originalIndex}";
-                var btn = GameplayUiUtility.CreateChoiceButton(_choicesParent, id, sprite);
+                var tile = _choiceTileUxml.CloneTree();
+                var btn = tile.Q<Button>("choice-button");
+                var label = tile.Q<Label>("choice-label");
+                if (label != null)
+                    label.text = id;
+                if (sprite != null && btn != null)
+                    btn.style.backgroundImage = new StyleBackground(sprite);
                 var captured = originalIndex;
-                btn.onClick.AddListener(() => onChosen(captured));
-                _buttons.Add(btn);
+                if (btn != null)
+                    btn.clicked += () => onChosen(captured);
+                _choicesRow.Add(tile);
             }
         }
 
@@ -86,17 +100,6 @@ namespace UnityFramework.MiniGames.UI
             return arr;
         }
 
-        void ClearChildren()
-        {
-            foreach (var b in _buttons)
-            {
-                if (b != null)
-                    Destroy(b.gameObject);
-            }
-
-            _buttons.Clear();
-            for (var i = _choicesParent.childCount - 1; i >= 0; i--)
-                Destroy(_choicesParent.GetChild(i).gameObject);
-        }
+        void ClearChildren() => _choicesRow?.Clear();
     }
 }

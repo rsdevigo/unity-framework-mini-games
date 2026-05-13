@@ -18,7 +18,6 @@ namespace UnityFramework.MiniGames.Audio
         MusicController _music;
 
         public event Action NarrationClipFinished;
-
         void Awake()
         {
             _sfx = GetComponent<SfxPlayer>() ?? gameObject.AddComponent<SfxPlayer>();

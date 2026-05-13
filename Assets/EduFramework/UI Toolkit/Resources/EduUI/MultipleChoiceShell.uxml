@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="shell-root" picking-mode="Position" class="edu-safe-area edu-feedback-root" style="flex-grow: 1; width: 100%; height: 100%; flex-direction: column; background-color: rgba(0,0,0,0.35); justify-content: flex-end; align-items: stretch; padding-bottom: 40px;">
+        <ui:VisualElement name="choices-row" picking-mode="Position" style="flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; align-self: center; width: 100%; max-width: 100%; padding: 24px; flex-shrink: 0;" />
+    </ui:VisualElement>
+</ui:UXML>

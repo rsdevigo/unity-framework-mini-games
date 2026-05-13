@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="Theme.uss" />
+    <ui:VisualElement name="blank-root" picking-mode="Position" class="edu-safe-area" style="flex-grow: 1; background-color: rgb(24, 28, 36); align-items: center; justify-content: center;">
+        <ui:Label text="UI Toolkit" style="font-size: 28px; color: rgb(248, 248, 252); -unity-font-style: bold;" />
+        <ui:Label text="Blank shell (designer reference)" style="font-size: 18px; color: rgb(140, 140, 150); margin-top: 16px;" />
+    </ui:VisualElement>
+</ui:UXML>

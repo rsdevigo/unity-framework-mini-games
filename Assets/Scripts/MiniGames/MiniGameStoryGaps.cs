@@ -23,6 +23,8 @@ namespace UnityFramework.MiniGames.Gameplay
 
         protected override IEnumerator RunSessionRoutine()
         {
+            yield return null;
+
             var book = Config.StoryBook;
             if (book?.Pages == null || book.Pages.Length == 0)
                 yield break;

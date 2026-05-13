@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using UnityFramework.MiniGames.Data;
 using UnityFramework.MiniGames.UI;
 
@@ -17,28 +17,34 @@ namespace UnityFramework.MiniGames.Gameplay
         sealed class CardVm
         {
             public Button Button;
-            public Text Label;
             public string PairId;
             public bool FaceUp;
             public bool Matched;
         }
 
+        UIDocument _doc;
         CardVm _pending;
+
+        UIDocument EnsureDoc()
+        {
+            if (_doc == null)
+                _doc = gameObject.GetComponent<UIDocument>() ?? gameObject.AddComponent<UIDocument>();
+            _doc.sortingOrder = 100;
+            EduUiToolkitDefaults.ApplyTo(_doc);
+            if (_doc.visualTreeAsset == null)
+                _doc.visualTreeAsset = EduUiToolkitDefaults.LoadVisualTree("MemoryShell");
+            return _doc;
+        }
 
         protected override IEnumerator RunSessionRoutine()
         {
             GameplayUiUtility.EnsureEventSystem();
-            var canvas = GameplayUiUtility.CreateOverlayCanvas("MemoryGame", transform);
-            var grid = new GameObject("Grid", typeof(RectTransform), typeof(GridLayoutGroup)).GetComponent<RectTransform>();
-            grid.SetParent(canvas.transform, false);
-            var gl = grid.GetComponent<GridLayoutGroup>();
-            gl.cellSize = new Vector2(160, 160);
-            gl.spacing = new Vector2(12, 12);
-            gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            gl.constraintCount = 4;
-            grid.anchorMin = new Vector2(0.5f, 0.5f);
-            grid.anchorMax = new Vector2(0.5f, 0.5f);
-            grid.sizeDelta = new Vector2(900, 400);
+            EnsureDoc();
+            yield return null;
+
+            var grid = _doc.rootVisualElement.Q("memory-grid");
+            if (grid == null)
+                yield break;
 
             var set = Config.ChallengeSet;
             if (set?.Challenges == null)
@@ -51,12 +57,13 @@ namespace UnityFramework.MiniGames.Gameplay
             var deck = new List<CardVm>();
             foreach (var p in pairs)
             {
-                deck.Add(MakeCard(grid, p));
-                deck.Add(MakeCard(grid, p));
+                deck.Add(MakeCard(p));
+                deck.Add(MakeCard(p));
             }
 
             Shuffle(deck);
-            WireDeck(deck);
+            foreach (var c in deck)
+                grid.Add(c.Button);
 
             CardVm first = null;
             var sw = Stopwatch.StartNew();
@@ -95,8 +102,8 @@ namespace UnityFramework.MiniGames.Gameplay
                 {
                     first.Matched = true;
                     picked.Matched = true;
-                    first.Button.interactable = false;
-                    picked.Button.interactable = false;
+                    first.Button.SetEnabled(false);
+                    picked.Button.SetEnabled(false);
                     matches++;
                 }
                 else
@@ -108,52 +115,39 @@ namespace UnityFramework.MiniGames.Gameplay
 
                 first = null;
                 sw = Stopwatch.StartNew();
-                WireDeck(deck);
                 yield return new WaitForSecondsRealtime(0.2f);
             }
         }
 
-        void WireDeck(List<CardVm> deck)
+        CardVm MakeCard(MemoryPairChallengeSO model)
         {
-            foreach (var c in deck)
+            var vm = new CardVm { PairId = model.PairId, FaceUp = false, Matched = false };
+            var btn = new Button { text = "?" };
+            vm.Button = btn;
+            btn.style.width = 160;
+            btn.style.height = 160;
+            btn.style.marginRight = 12;
+            btn.style.marginBottom = 12;
+            btn.style.backgroundColor = new Color(0.2f, 0.45f, 0.85f);
+            btn.style.color = Color.white;
+            btn.style.fontSize = 22;
+            btn.style.borderTopLeftRadius = 8;
+            btn.style.borderTopRightRadius = 8;
+            btn.style.borderBottomLeftRadius = 8;
+            btn.style.borderBottomRightRadius = 8;
+            btn.RegisterCallback<ClickEvent>(_ =>
             {
-                if (c.Matched || c.Button == null)
-                    continue;
-                c.Button.onClick.RemoveAllListeners();
-                var vm = c;
-                c.Button.onClick.AddListener(() => _pending = vm);
-            }
-        }
-
-        static CardVm MakeCard(Transform parent, MemoryPairChallengeSO model)
-        {
-            var go = new GameObject("Card", typeof(RectTransform), typeof(Image), typeof(Button));
-            go.transform.SetParent(parent, false);
-            var img = go.GetComponent<Image>();
-            img.color = new Color(0.2f, 0.45f, 0.85f);
-            var btn = go.GetComponent<Button>();
-            var txGo = new GameObject("Label", typeof(RectTransform), typeof(Text));
-            txGo.transform.SetParent(go.transform, false);
-            var trt = (RectTransform)txGo.transform;
-            trt.anchorMin = Vector2.zero;
-            trt.anchorMax = Vector2.one;
-            trt.offsetMin = Vector2.zero;
-            trt.offsetMax = Vector2.zero;
-            var tx = txGo.GetComponent<Text>();
-            tx.font = GameplayUiUtility.BuiltinRuntimeFont;
-            tx.alignment = TextAnchor.MiddleCenter;
-            tx.color = Color.white;
-            tx.resizeTextForBestFit = true;
-            tx.resizeTextMinSize = 8;
-            tx.resizeTextMaxSize = 28;
-            tx.text = "?";
-            return new CardVm { Button = btn, Label = tx, PairId = model.PairId, FaceUp = false };
+                if (vm.Matched)
+                    return;
+                _pending = vm;
+            });
+            return vm;
         }
 
         static void Flip(CardVm c, bool faceUp)
         {
             c.FaceUp = faceUp;
-            c.Label.text = faceUp ? c.PairId : "?";
+            c.Button.text = faceUp ? c.PairId : "?";
         }
 
         static void Shuffle(List<CardVm> list)
