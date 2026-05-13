@@ -7,6 +7,14 @@ namespace UnityFramework.MiniGames.UI
 {
     public static class GameplayUiUtility
     {
+        static Font _builtinRuntimeFont;
+
+        /// <summary>
+        /// Built-in font for runtime-created uGUI <see cref="Text"/> (Unity 6+: use LegacyRuntime.ttf; Arial.ttf was removed).
+        /// </summary>
+        public static Font BuiltinRuntimeFont =>
+            _builtinRuntimeFont ??= Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
         public static void EnsureEventSystem()
         {
             if (Object.FindAnyObjectByType<EventSystem>() != null)
@@ -51,7 +59,7 @@ namespace UnityFramework.MiniGames.UI
             trt.offsetMin = Vector2.zero;
             trt.offsetMax = Vector2.zero;
             var tx = textGo.GetComponent<Text>();
-            tx.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            tx.font = BuiltinRuntimeFont;
             tx.alignment = TextAnchor.MiddleCenter;
             tx.resizeTextForBestFit = true;
             tx.resizeTextMinSize = 10;

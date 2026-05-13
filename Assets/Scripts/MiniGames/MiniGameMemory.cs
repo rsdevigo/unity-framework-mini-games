@@ -140,7 +140,7 @@ namespace UnityFramework.MiniGames.Gameplay
             trt.offsetMin = Vector2.zero;
             trt.offsetMax = Vector2.zero;
             var tx = txGo.GetComponent<Text>();
-            tx.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            tx.font = GameplayUiUtility.BuiltinRuntimeFont;
             tx.alignment = TextAnchor.MiddleCenter;
             tx.color = Color.white;
             tx.resizeTextForBestFit = true;

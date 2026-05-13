@@ -48,7 +48,7 @@ namespace UnityFramework.MiniGames.Gameplay
 
                 var prompt = new GameObject("Prompt", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
                 prompt.transform.SetParent(root, false);
-                prompt.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+                prompt.font = GameplayUiUtility.BuiltinRuntimeFont;
                 prompt.fontSize = 42;
                 prompt.alignment = TextAnchor.MiddleCenter;
                 prompt.color = Color.white;

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c435dd9f36470d94e8ee72edadbdd90b, type: 3}
+  m_Name: Ch_Mem_A
+  m_EditorClassIdentifier: Assembly-CSharp::UnityFramework.MiniGames.Data.MemoryPairChallengeSO
+  _id: pairA
+  _conceptKeys:
+  - memory:pairA
+  _bnccTags: []
+  _promptNarration: {fileID: 0}
+  _pairId: pairA
+  _cardFaceA: {fileID: 0}
+  _cardFaceB: {fileID: 0}

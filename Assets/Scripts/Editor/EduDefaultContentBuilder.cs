@@ -14,9 +14,13 @@ namespace UnityFramework.MiniGames.EditorTools
 {
     public static class EduDefaultContentBuilder
     {
-        const string Root = "Assets/_Project";
+        const string Root = "Assets/EduFramework";
         const string Gen = Root + "/ScriptableObjects/Generated";
         const string MiniScenes = Root + "/Scenes/MiniGames";
+
+        [MenuItem("Edu Framework/Create Template Prefab (Multiple Choice Mini-Game)")]
+        public static void CreateMultipleChoiceMiniGameTemplatePrefab() =>
+            EnsureMiniGameMultipleChoiceTemplatePrefab(pingWhenExists: true);
 
         [MenuItem("Edu Framework/Generate Default Content (SOs + Scenes + Hub Wire)")]
         public static void GenerateAll()
@@ -72,6 +76,7 @@ namespace UnityFramework.MiniGames.EditorTools
             WireHubScene(hubCfg);
             SaveShellPrefab($"{Root}/Prefabs/UI/MultipleChoiceShellView.prefab", typeof(MultipleChoiceShellView));
             SaveShellPrefab($"{Root}/Prefabs/UI/DragDropSlotsShellView.prefab", typeof(DragDropSlotsShellView));
+            EnsureMiniGameMultipleChoiceTemplatePrefab(pingWhenExists: false);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -336,23 +341,90 @@ namespace UnityFramework.MiniGames.EditorTools
             Object.DestroyImmediate(go);
         }
 
-        static void WireHubScene(HubConfigurationSO hubCfg)
+        /// <summary>
+        /// Root prefab for additive mini-game scenes: <see cref="MiniGameMultipleChoice"/> + <see cref="MultipleChoiceShellView"/> on one object (matches runtime shell lookup).
+        /// </summary>
+        static void EnsureMiniGameMultipleChoiceTemplatePrefab(bool pingWhenExists)
         {
-            const string hubPath = "Assets/_Project/Scenes/Hub.unity";
-            if (!File.Exists(hubPath))
-                return;
-            var sc = EditorSceneManager.OpenScene(hubPath, OpenSceneMode.Single);
-            var hub = Object.FindObjectsByType<HubWorldController>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
-            if (hub == null)
+            const string path = Root + "/Prefabs/MiniGames/MiniGame_Template_MultipleChoice.prefab";
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+            if (File.Exists(path))
             {
-                var go = new GameObject("HubSystems");
-                hub = go.AddComponent<HubWorldController>();
+                if (pingWhenExists)
+                    EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(path));
+                return;
             }
 
-            var so = new SerializedObject(hub);
-            so.FindProperty("_configuration").objectReferenceValue = hubCfg;
-            so.ApplyModifiedPropertiesWithoutUndo();
-            EditorSceneManager.SaveScene(sc);
+            var go = new GameObject("MiniGame_Template_MultipleChoice");
+            go.AddComponent<MultipleChoiceShellView>();
+            go.AddComponent<MiniGameMultipleChoice>();
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            AssetDatabase.SaveAssets();
+            if (pingWhenExists)
+                EditorGUIUtility.PingObject(AssetDatabase.LoadAssetAtPath<Object>(path));
+        }
+
+        static void WireHubScene(HubConfigurationSO hubCfg)
+        {
+            if (!TryGetHubSceneAssetPath(out var hubPath))
+            {
+                Debug.LogWarning(
+                    "Edu Framework: no Hub scene found under Assets (e.g. Assets/Scenes/Hub.unity). " +
+                    "Skip wiring HubWorldController; assign HubConfigurationSO manually in your Hub scene.");
+                return;
+            }
+
+            try
+            {
+                var sc = EditorSceneManager.OpenScene(hubPath, OpenSceneMode.Single);
+                var hub = Object.FindObjectsByType<HubWorldController>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                    .FirstOrDefault();
+                if (hub == null)
+                {
+                    var go = new GameObject("HubSystems");
+                    hub = go.AddComponent<HubWorldController>();
+                }
+
+                var so = new SerializedObject(hub);
+                so.FindProperty("_configuration").objectReferenceValue = hubCfg;
+                so.ApplyModifiedPropertiesWithoutUndo();
+                EditorSceneManager.SaveScene(sc);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"Edu Framework: could not open or save hub scene '{hubPath}': {ex.Message}\nAssign HubConfigurationSO manually on HubWorldController.");
+            }
+        }
+
+        /// <summary>
+        /// Resolves a project Hub scene path via the asset database (do not use <see cref="File.Exists"/> on "Assets/..." — CWD may not be the project root).
+        /// </summary>
+        static bool TryGetHubSceneAssetPath(out string path)
+        {
+            path = null;
+            foreach (var candidate in new[] { "Assets/Scenes/Hub.unity", "Assets/EduFramework/Scenes/Hub.unity" })
+            {
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(candidate) != null)
+                {
+                    path = candidate;
+                    return true;
+                }
+            }
+
+            foreach (var guid in AssetDatabase.FindAssets("t:Scene"))
+            {
+                var p = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.Equals(Path.GetFileName(p), "Hub.unity", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    path = p;
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

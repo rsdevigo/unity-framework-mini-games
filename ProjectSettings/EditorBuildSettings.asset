@@ -6,13 +6,31 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/_Project/Scenes/Bootstrap.unity
-    guid: 00000000000000000000000000000000
+    path: Assets/Scenes/Bootstrap.unity
+    guid: b3e9a1c47f205d4e9b6ec8a52f1d0e7a
   - enabled: 1
-    path: Assets/_Project/Scenes/Hub.unity
-    guid: 00000000000000000000000000000000
+    path: Assets/Scenes/Hub.unity
+    guid: ae508ff84ba8aef46afa3e672a65f3c8
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/EduFramework/Scenes/MiniGames/MG_Consonants.unity
+    guid: a46178a9d9e9dfa4a97fc1e23d42b45a
+  - enabled: 1
+    path: Assets/EduFramework/Scenes/MiniGames/MG_Counting.unity
+    guid: 42a65c214f6d11e43bfb0c7dba531e11
+  - enabled: 1
+    path: Assets/EduFramework/Scenes/MiniGames/MG_Memory.unity
+    guid: b8a47427246434548b3128b4d8e2f812
+  - enabled: 1
+    path: Assets/EduFramework/Scenes/MiniGames/MG_Story.unity
+    guid: 118c9028dddc48a488078a5d93a4744d
+  - enabled: 1
+    path: Assets/EduFramework/Scenes/MiniGames/MG_Classify.unity
+    guid: b4c52f954514e9945b114bf180201043
+  - enabled: 1
+    path: Assets/EduFramework/Scenes/MiniGames/MG_Syllables.unity
+    guid: e956d9fc76e700d46bf02b486ccad2cf
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

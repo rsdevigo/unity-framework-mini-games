@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efdcb72e829d0754ead5b7a37539ae21, type: 3}
+  m_Name: MiniGameCatalog_Default
+  m_EditorClassIdentifier: Assembly-CSharp::UnityFramework.MiniGames.Data.MiniGameCatalogSO
+  _entries:
+  - _gameId: consonants
+    _displayNameKey: mg.consonants
+    _additiveSceneName: MG_Consonants
+    _bnccTags: []
+    _recommendedAgeMin: 4
+    _recommendedAgeMax: 6
+  - _gameId: counting
+    _displayNameKey: mg.counting
+    _additiveSceneName: MG_Counting
+    _bnccTags: []
+    _recommendedAgeMin: 4
+    _recommendedAgeMax: 6
+  - _gameId: memory
+    _displayNameKey: mg.memory
+    _additiveSceneName: MG_Memory
+    _bnccTags: []
+    _recommendedAgeMin: 4
+    _recommendedAgeMax: 6
+  - _gameId: story
+    _displayNameKey: mg.story
+    _additiveSceneName: MG_Story
+    _bnccTags: []
+    _recommendedAgeMin: 4
+    _recommendedAgeMax: 6
+  - _gameId: classify
+    _displayNameKey: mg.classify
+    _additiveSceneName: MG_Classify
+    _bnccTags: []
+    _recommendedAgeMin: 4
+    _recommendedAgeMax: 6
+  - _gameId: syllables
+    _displayNameKey: mg.syllables
+    _additiveSceneName: MG_Syllables
+    _bnccTags: []
+    _recommendedAgeMin: 4
+    _recommendedAgeMax: 6

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9debabbb4fd6174985a26c22425e955, type: 3}
+  m_Name: HubConfiguration_Default
+  m_EditorClassIdentifier: Assembly-CSharp::UnityFramework.MiniGames.Data.HubConfigurationSO
+  _catalog: {fileID: 11400000, guid: fc8a84f793ef4e947a62b2d8634ffece, type: 2}
+  _nodes:
+  - _nodeId: node_consonants
+    _linkedGameId: consonants
+    _anchoredUiPosition: {x: -420, y: 80}
+    _unlockRule: {fileID: 0}
+  - _nodeId: node_counting
+    _linkedGameId: counting
+    _anchoredUiPosition: {x: -220, y: -40}
+    _unlockRule: {fileID: 0}
+  - _nodeId: node_memory
+    _linkedGameId: memory
+    _anchoredUiPosition: {x: 0, y: 120}
+    _unlockRule: {fileID: 0}
+  - _nodeId: node_story
+    _linkedGameId: story
+    _anchoredUiPosition: {x: 220, y: -40}
+    _unlockRule: {fileID: 0}
+  - _nodeId: node_classify
+    _linkedGameId: classify
+    _anchoredUiPosition: {x: 420, y: 80}
+    _unlockRule: {fileID: 0}
+  - _nodeId: node_syllables
+    _linkedGameId: syllables
+    _anchoredUiPosition: {x: 0, y: -200}
+    _unlockRule: {fileID: 0}

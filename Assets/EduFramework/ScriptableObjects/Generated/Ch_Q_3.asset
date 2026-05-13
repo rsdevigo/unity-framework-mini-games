@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef406c85cc1b63d4085fd4c4742c2676, type: 3}
+  m_Name: Ch_Q_3
+  m_EditorClassIdentifier: Assembly-CSharp::UnityFramework.MiniGames.Data.QuantityChallengeSO
+  _id: qty_demo
+  _conceptKeys:
+  - count:quantity
+  _bnccTags: []
+  _promptNarration: {fileID: 0}
+  _targetCount: 3
+  _tokenSprite: {fileID: 0}
+  _countNarrationTemplate: {fileID: 0}
+  _numberClips: []
